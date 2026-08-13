@@ -1,7 +1,7 @@
 package com.assignment.app.domain.report.service
 
 import com.assignment.app.domain.report.dto.ChatReportRow
-import com.assignment.app.domain.report.service.ReportGenerator
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 import java.time.format.DateTimeFormatter
@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter
  * - 줄바꿈은 \r\n(RFC 4180), UTF-8 BOM을 선두에 붙여 Excel에서 한글이 깨지지 않게 한다
  */
 @Component
+@ConditionalOnProperty(name = ["report.format"], havingValue = "csv", matchIfMissing = true)
 class CsvReportGenerator : ReportGenerator {
 
     override val format = "csv"

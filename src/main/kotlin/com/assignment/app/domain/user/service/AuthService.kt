@@ -41,6 +41,9 @@ class AuthService(
         val saved = try {
             userRepository.saveAndFlush(user)
         } catch (e: DataIntegrityViolationException) {
+            // 무결성 위반을 전부 중복으로 단정하면, 길이 초과 같은 다른 위반까지
+            // "이미 사용 중인 이메일"로 잘못 안내된다. 이메일 유일 제약일 때만 409로 옮긴다.
+            if (!violatesEmailUnique(e)) throw e
             throw ApiException.conflict("EMAIL_ALREADY_EXISTS", "이미 사용 중인 이메일입니다")
         }
         return UserResponse.from(saved)
@@ -62,6 +65,20 @@ class AuthService(
         return LoginResponse(accessToken = jwtTokenProvider.issue(user))
     }
 
+    /** 이메일 유일 제약 위반인지 원인 사슬에서 제약 이름으로 판별한다. */
+    private fun violatesEmailUnique(e: DataIntegrityViolationException): Boolean {
+        var cause: Throwable? = e
+        while (cause != null) {
+            if (cause.message?.contains(EMAIL_UNIQUE_CONSTRAINT, ignoreCase = true) == true) return true
+            cause = cause.cause
+        }
+        return false
+    }
+
     private fun requireField(value: String?, field: String): String =
         value ?: throw ApiException.badRequest("VALIDATION_FAILED", "$field 값이 필요합니다")
+
+    companion object {
+        private const val EMAIL_UNIQUE_CONSTRAINT = "uk_users_email"
+    }
 }

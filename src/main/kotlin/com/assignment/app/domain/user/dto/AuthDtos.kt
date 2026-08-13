@@ -12,6 +12,7 @@ import java.util.UUID
 data class SignupRequest(
     @field:NotBlank(message = "이메일은 필수입니다")
     @field:Email(message = "이메일 형식이 올바르지 않습니다")
+    @field:Size(max = 255, message = "이메일은 255자를 넘을 수 없습니다")
     val email: String? = null,
 
     @field:NotBlank(message = "패스워드는 필수입니다")

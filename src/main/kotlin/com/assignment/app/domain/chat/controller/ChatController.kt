@@ -64,7 +64,11 @@ class ChatController(
                 emitter.send(SseEmitter.event().name(EVENT_DONE).data(chat))
                 emitter.complete()
             } catch (e: ApiException) {
-                emitter.send(SseEmitter.event().name(EVENT_ERROR).data(ErrorResponse(e.status.value(), e.code, e.message)))
+                // 클라이언트가 이미 끊겼으면 이 전송도 실패한다. 그래도 emitter는 반드시 닫아야
+                // 타임아웃까지 살아남지 않는다.
+                runCatching {
+                    emitter.send(SseEmitter.event().name(EVENT_ERROR).data(ErrorResponse(e.status.value(), e.code, e.message)))
+                }
                 emitter.complete()
             } catch (e: Exception) {
                 log.error("스트리밍 중 오류", e)

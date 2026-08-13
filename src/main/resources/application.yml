@@ -22,6 +22,10 @@ ai:
     default-model: ${OPENAI_DEFAULT_MODEL:gpt-4o-mini}
     timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:60}
 
+report:
+  # 보고서 출력 형식. 새 형식은 ReportGenerator 구현체를 추가하고 이 값으로 선택한다
+  format: ${REPORT_FORMAT:csv}
+
 chat:
   # LLM에 함께 보낼 최근 대화 수 (DB에는 전부 저장하며 조회 API는 전체를 반환한다)
   history-size: ${CHAT_HISTORY_SIZE:10}

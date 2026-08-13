@@ -15,7 +15,8 @@ data class ChatCreateRequest(
     /** true면 SSE로 응답한다 */
     val isStreaming: Boolean? = null,
 
-    /** 지정 시 해당 모델로 생성한다 */
+    /** 지정 시 해당 모델로 생성한다. 길이는 저장 컬럼과 같은 상한을 둔다 */
+    @field:Size(max = 100, message = "model은 100자를 넘을 수 없습니다")
     val model: String? = null,
 )
 

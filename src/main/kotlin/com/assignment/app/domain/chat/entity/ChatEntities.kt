@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -31,6 +32,15 @@ class ChatThread(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     var id: UUID? = null
+
+    /** 마지막 질문으로부터 유휴 시간이 지나지 않았으면 이어지는 대화로 본다. */
+    fun isActiveAt(now: Instant, idle: Duration): Boolean =
+        Duration.between(lastQuestionAt, now) <= idle
+
+    /** 늦게 끝난 요청이 먼저 커밋돼 마지막 질문 시각이 과거로 되돌아가지 않게 한다. */
+    fun markQuestioned(at: Instant) {
+        if (at.isAfter(lastQuestionAt)) lastQuestionAt = at
+    }
 }
 
 @Entity

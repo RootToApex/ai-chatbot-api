@@ -46,7 +46,7 @@ class ChatService(
         val now = Instant.now()
         val history = loadHistory(userId, now)
         val result = callAi(history, question, request.model)
-        return ChatResponse.from(persist(userId, question, result))
+        return ChatResponse.from(persist(userId, question, result, now))
     }
 
     /**
@@ -62,7 +62,7 @@ class ChatService(
         } catch (e: AiProviderException) {
             throw unavailable(e)
         }
-        return ChatResponse.from(persist(userId, question, result))
+        return ChatResponse.from(persist(userId, question, result, now))
     }
 
     /** 대화 목록 — 스레드를 페이징하고, 각 스레드의 대화는 별도 조회로 채운다. */
@@ -127,12 +127,13 @@ class ChatService(
         throw unavailable(e)
     }
 
-    private fun persist(userId: UUID, question: String, result: AiChatResult): Chat {
-        val committedAt = Instant.now()
-        val thread = threadResolver.commitQuestion(userId, committedAt)
-        val threadId = requireNotNull(thread.id) { "스레드 저장에 실패했습니다" }
-        return chatWriter.save(threadId, question, result.content, result.model, committedAt)
-    }
+    /**
+     * 스레드 경계는 **질문을 받은 시각**으로 판정한다.
+     * 저장 시점으로 판정하면 AI 응답이 오래 걸릴 때, 이력은 기존 스레드에서 읽어놓고
+     * 저장은 새 스레드로 가는 어긋남이 생긴다.
+     */
+    private fun persist(userId: UUID, question: String, result: AiChatResult, askedAt: Instant): Chat =
+        chatWriter.append(userId, question, result.content, result.model, askedAt)
 
     private fun requireQuestion(request: ChatCreateRequest): String =
         request.question?.trim()?.takeIf { it.isNotEmpty() }

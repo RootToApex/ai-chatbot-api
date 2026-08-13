@@ -1,11 +1,12 @@
 -- 식별자는 UUID로 둔다. 순번이 노출되지 않고, 분산 환경에서 미리 생성할 수 있다.
 CREATE TABLE users (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email      VARCHAR(255) NOT NULL UNIQUE,
+    email      VARCHAR(255) NOT NULL,
     password   VARCHAR(255) NOT NULL,
     name       VARCHAR(100) NOT NULL,
     role       VARCHAR(20)  NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT uk_users_email UNIQUE (email)
 );
 
 CREATE INDEX idx_users_created_at ON users (created_at);
