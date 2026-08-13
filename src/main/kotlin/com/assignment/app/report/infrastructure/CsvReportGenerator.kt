@@ -39,7 +39,11 @@ class CsvReportGenerator : ReportGenerator {
         FORMATTER.format(row.createdAt),
     ).joinToString(",") { escape(it) }
 
-    /** 필드 하나를 CSV 규칙에 맞게 이스케이프한다. */
+    /**
+     * 필드 하나를 CSV 규칙에 맞게 이스케이프한다.
+     * 값 안의 개행은 그대로 둔다 — 인용된 필드 안의 개행은 규격상 허용되며,
+     * CRLF로 정규화하면 사용자가 실제로 입력한 내용을 바꾸게 된다.
+     */
     private fun escape(value: String): String {
         val guarded = if (value.isNotEmpty() && FORMULA_TRIGGERS.contains(value[0])) "'$value" else value
         return "\"" + guarded.replace("\"", "\"\"") + "\""

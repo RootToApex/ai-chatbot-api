@@ -26,6 +26,12 @@ class AdminSeeder(
 
     override fun run(args: ApplicationArguments) {
         if (userRepository.findByEmail(adminEmail) != null) return
+        if (adminPassword.isBlank()) {
+            log.warn(
+                "ADMIN_PASSWORD가 설정되지 않아 문서에 공개된 기본값으로 관리자 계정을 생성합니다. " +
+                    "로컬 실행 외의 환경에서는 반드시 ADMIN_PASSWORD를 지정하십시오.",
+            )
+        }
         val hash = passwordEncoder.encode(adminPassword.ifBlank { DEFAULT_LOCAL_PASSWORD })
         userRepository.save(
             User(email = adminEmail, password = hash, name = "관리자", role = Role.ADMIN),

@@ -48,6 +48,9 @@ class FeedbackService(
         val saved = try {
             feedbackRepository.saveAndFlush(feedback)
         } catch (e: DataIntegrityViolationException) {
+            // 무결성 위반을 전부 중복으로 뭉뚱그리면, 대화가 동시에 삭제돼 발생한 FK 위반까지
+            // "이미 피드백을 남겼다"로 잘못 안내된다. 유일 제약 위반일 때만 409로 옮긴다.
+            if (!violatesUniqueFeedback(e)) throw e
             throw ApiException.conflict("FEEDBACK_DUPLICATE", "이미 이 대화에 피드백을 남겼습니다")
         }
 
@@ -101,5 +104,19 @@ class FeedbackService(
         feedback.status = newStatus
         val saved = feedbackRepository.save(feedback)
         return FeedbackResponse.from(saved)
+    }
+
+    /** 유일 제약(user_id, chat_id) 위반인지 원인 사슬에서 제약 이름으로 판별한다. */
+    private fun violatesUniqueFeedback(e: DataIntegrityViolationException): Boolean {
+        var cause: Throwable? = e
+        while (cause != null) {
+            if (cause.message?.contains(UNIQUE_CONSTRAINT, ignoreCase = true) == true) return true
+            cause = cause.cause
+        }
+        return false
+    }
+
+    companion object {
+        private const val UNIQUE_CONSTRAINT = "uk_feedbacks_user_chat"
     }
 }
