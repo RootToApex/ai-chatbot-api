@@ -1,0 +1,105 @@
+package com.assignment.app.feedback.application
+
+import com.assignment.app.chat.domain.ChatRepository
+import com.assignment.app.chat.domain.ChatThreadRepository
+import com.assignment.app.common.ApiException
+import com.assignment.app.common.PageParams
+import com.assignment.app.common.PageResponse
+import com.assignment.app.common.SortDirection
+import com.assignment.app.config.AuthenticatedUser
+import com.assignment.app.feedback.domain.Feedback
+import com.assignment.app.feedback.domain.FeedbackRepository
+import com.assignment.app.feedback.domain.FeedbackStatus
+import com.assignment.app.user.domain.Role
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+class FeedbackService(
+    private val feedbackRepository: FeedbackRepository,
+    private val chatRepository: ChatRepository,
+    private val chatThreadRepository: ChatThreadRepository,
+) {
+
+    @Transactional
+    fun create(user: AuthenticatedUser, request: FeedbackCreateRequest): FeedbackResponse {
+        val chatId = requireNotNull(request.chatId) { "chatId는 필수입니다" }
+        val isPositive = requireNotNull(request.isPositive) { "isPositive는 필수입니다" }
+
+        val chat = chatRepository.findById(chatId)
+            .orElseThrow { ApiException.notFound("CHAT_NOT_FOUND", "대화를 찾을 수 없습니다") }
+        val thread = chatThreadRepository.findById(chat.threadId)
+            .orElseThrow { ApiException.notFound("CHAT_NOT_FOUND", "대화를 찾을 수 없습니다") }
+
+        if (user.role != Role.ADMIN && thread.userId != user.id) {
+            throw ApiException.forbidden("FEEDBACK_FORBIDDEN", "본인이 생성한 대화에만 피드백을 남길 수 있습니다")
+        }
+
+        val feedback = Feedback(
+            userId = user.id,
+            chatId = chatId,
+            isPositive = isPositive,
+            status = FeedbackStatus.PENDING,
+        )
+
+        val saved = try {
+            feedbackRepository.saveAndFlush(feedback)
+        } catch (e: DataIntegrityViolationException) {
+            throw ApiException.conflict("FEEDBACK_DUPLICATE", "이미 이 대화에 피드백을 남겼습니다")
+        }
+
+        return FeedbackResponse.from(saved)
+    }
+
+    @Transactional(readOnly = true)
+    fun list(user: AuthenticatedUser, page: Int, size: Int, sort: String, isPositive: Boolean?): PageResponse<FeedbackResponse> {
+        PageParams.validate(page, size)
+        val direction = PageParams.direction(sort)
+        val springDirection = if (direction == SortDirection.ASC) Sort.Direction.ASC else Sort.Direction.DESC
+        val pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Order(springDirection, "createdAt"), Sort.Order(springDirection, "id")),
+        )
+
+        val result = if (user.role == Role.ADMIN) {
+            if (isPositive != null) {
+                feedbackRepository.findAllByIsPositive(isPositive, pageable)
+            } else {
+                feedbackRepository.findAll(pageable)
+            }
+        } else {
+            if (isPositive != null) {
+                feedbackRepository.findByUserIdAndIsPositive(user.id, isPositive, pageable)
+            } else {
+                feedbackRepository.findByUserId(user.id, pageable)
+            }
+        }
+
+        return PageResponse.from(result, FeedbackResponse::from)
+    }
+
+    @Transactional
+    fun updateStatus(user: AuthenticatedUser, id: Long, request: FeedbackStatusUpdateRequest): FeedbackResponse {
+        if (user.role != Role.ADMIN) {
+            throw ApiException.forbidden("FEEDBACK_STATUS_FORBIDDEN", "관리자만 상태를 변경할 수 있습니다")
+        }
+
+        val rawStatus = requireNotNull(request.status) { "status는 필수입니다" }
+        val newStatus = try {
+            FeedbackStatus.valueOf(rawStatus.uppercase())
+        } catch (e: IllegalArgumentException) {
+            throw ApiException.badRequest("INVALID_STATUS", "status는 PENDING 또는 RESOLVED여야 합니다")
+        }
+
+        val feedback = feedbackRepository.findById(id)
+            .orElseThrow { ApiException.notFound("FEEDBACK_NOT_FOUND", "피드백을 찾을 수 없습니다") }
+
+        feedback.status = newStatus
+        val saved = feedbackRepository.save(feedback)
+        return FeedbackResponse.from(saved)
+    }
+}
