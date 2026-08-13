@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 
 /**
  * 관리자 계정은 이 시드로만 만든다 — 회원가입 API가 role을 받으면 공개 API로 권한 탈취가 되기 때문.
- * 값은 환경변수로 주입하며, 로컬 기본값은 채점자가 키 없이 재현할 수 있도록 README에 명시한다.
+ * 값은 환경변수로 주입하며, 로컬 기본값은 README에 명시한다.
  */
 @Component
 class AdminSeeder(

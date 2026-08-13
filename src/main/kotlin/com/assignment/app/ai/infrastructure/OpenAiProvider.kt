@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.MediaType
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
@@ -26,6 +27,7 @@ import java.time.Duration
  * - 키가 없으면 호출을 시도하지 않고 즉시 실패시킨다 (더미 키로 외부를 두드리지 않는다)
  */
 @Component
+@ConditionalOnProperty(name = ["ai.provider"], havingValue = "openai", matchIfMissing = true)
 class OpenAiProvider(
     @Value("\${ai.openai.api-key:}") private val apiKey: String,
     @Value("\${ai.openai.base-url:https://api.openai.com}") private val baseUrl: String,

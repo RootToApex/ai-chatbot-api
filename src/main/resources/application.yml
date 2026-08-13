@@ -13,6 +13,8 @@ spring:
     enabled: true
 
 ai:
+  # openai = 실제 호출(기본), fake = 키 없이 흐름만 시연하는 결정론적 응답
+  provider: ${AI_PROVIDER:openai}
   openai:
     # 키가 없으면 대화 생성은 503으로 명시적으로 실패한다 (더미 키로 외부를 두드리지 않는다)
     api-key: ${OPENAI_API_KEY:}
