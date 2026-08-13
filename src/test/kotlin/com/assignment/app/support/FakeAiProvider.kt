@@ -1,8 +1,8 @@
 package com.assignment.app.support
 
-import com.assignment.app.ai.domain.AiChatRequest
-import com.assignment.app.ai.domain.AiChatResult
-import com.assignment.app.ai.domain.AiProvider
+import com.assignment.app.global.ai.AiChatRequest
+import com.assignment.app.global.ai.AiChatResult
+import com.assignment.app.global.ai.AiProvider
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Component
 

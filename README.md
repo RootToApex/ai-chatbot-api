@@ -68,12 +68,28 @@ curl -s localhost:8080/api/v1/admin/report -H "Authorization: Bearer $ADMIN" -o 
 
 | 바뀔 축 | 지금 구조 | 바뀔 때 손대는 곳 |
 |---|---|---|
-| AI provider 교체 | `ai/domain/AiProvider` 포트 + `ai/infrastructure/OpenAiProvider` 어댑터 | 어댑터 하나 추가. 도메인·유스케이스 무변경 |
+| AI provider 교체 | `global/ai/AiProvider` 인터페이스 + `OpenAiProvider` 구현체 | 구현체 하나 추가. 도메인·서비스 무변경 |
 | 사내 문서 학습(RAG) | `AiChatRequest.context`가 참고 문서 자리 | 문서·임베딩·검색을 별도 컨텍스트로 추가하고 검색 결과를 context에 주입 |
-| 보고서 형식(CSV 외) | `report/domain/ReportGenerator` 포트 | 구현체 추가 |
-| 모듈 분리 | 도메인별 `domain / application / api` 패키지, 의존 방향 단방향 | 패키지 경계가 곧 모듈 경계라 파일 이동 없이 Gradle 모듈로 승격 가능 |
+| 보고서 형식(CSV 외) | `domain/report/service/ReportGenerator` 인터페이스 | 구현체 추가 |
+| 모듈 분리 | 도메인별로 폴더가 갈려 있고 공통은 `global/`에 모임 | 도메인 폴더 경계가 곧 모듈 경계라 파일 이동을 최소화해 승격 가능 |
 
-**멀티모듈로 가지 않은 이유**: 초기 구현 단계에서 모듈 분리는 파일 이동·의존 방향·컴포넌트 스캔 재설정에 시간을 쓰고, 실패하면 빌드가 죽습니다. 요구된 기능을 모두 동작시키는 것이 먼저이므로, 같은 의존 규칙을 패키지로 강제하고 승격 경로를 남기는 쪽을 택했습니다.
+### 패키지 구조
+
+```
+com.assignment.app
+├─ domain/
+│  ├─ user/      controller · service · repository · entity · dto
+│  ├─ chat/      controller · service · repository · entity · dto
+│  ├─ feedback/  controller · service · repository · entity · dto
+│  └─ report/    controller · service · dto
+└─ global/
+   ├─ config/    보안·JWT·초기 데이터
+   ├─ exception/ 오류 응답 스키마와 공통 처리
+   ├─ common/    페이지 응답·파라미터 검증
+   └─ ai/        AiProvider 인터페이스와 구현체
+```
+
+**멀티모듈로 가지 않은 이유**: 초기 구현 단계에서 모듈 분리는 파일 이동·의존 방향·빌드 설정 재조정에 시간을 쓰고, 실패하면 빌드 자체가 멈춥니다. 요구된 기능을 모두 동작시키는 것이 먼저라고 보아, 도메인별로 폴더를 갈라 경계만 명확히 해두고 모듈 승격은 이후 과제로 남겼습니다.
 
 ## 설계 계획
 

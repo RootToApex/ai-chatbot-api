@@ -1,0 +1,46 @@
+package com.assignment.app.global.config
+
+import com.assignment.app.domain.user.entity.Role
+import com.assignment.app.domain.user.entity.User
+import com.assignment.app.domain.user.repository.UserRepository
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.ApplicationArguments
+import org.springframework.boot.ApplicationRunner
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Component
+
+/**
+ * 관리자 계정은 이 시드로만 만든다 — 회원가입 API가 role을 받으면 공개 API로 권한 탈취가 되기 때문.
+ * 값은 환경변수로 주입하며, 로컬 기본값은 README에 명시한다.
+ */
+@Component
+class AdminSeeder(
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder,
+    @Value("\${admin.email:admin@example.com}") private val adminEmail: String,
+    @Value("\${admin.password:}") private val adminPassword: String,
+) : ApplicationRunner {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    override fun run(args: ApplicationArguments) {
+        if (userRepository.findByEmail(adminEmail) != null) return
+        if (adminPassword.isBlank()) {
+            log.warn(
+                "ADMIN_PASSWORD가 설정되지 않아 문서에 공개된 기본값으로 관리자 계정을 생성합니다. " +
+                    "로컬 실행 외의 환경에서는 반드시 ADMIN_PASSWORD를 지정하십시오.",
+            )
+        }
+        val hash = passwordEncoder.encode(adminPassword.ifBlank { DEFAULT_LOCAL_PASSWORD })
+        userRepository.save(
+            User(email = adminEmail, password = hash, name = "관리자", role = Role.ADMIN),
+        )
+        log.info("관리자 계정을 생성했습니다: {}", adminEmail)
+    }
+
+    companion object {
+        /** 로컬 재현용 기본값. 운영 환경에서는 ADMIN_PASSWORD로 반드시 덮어쓴다. */
+        private const val DEFAULT_LOCAL_PASSWORD = "admin1234"
+    }
+}
