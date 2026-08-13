@@ -12,6 +12,20 @@ spring:
   flyway:
     enabled: true
 
+ai:
+  openai:
+    # 키가 없으면 대화 생성은 503으로 명시적으로 실패한다 (더미 키로 외부를 두드리지 않는다)
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+    default-model: ${OPENAI_DEFAULT_MODEL:gpt-4o-mini}
+    timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:60}
+
+chat:
+  # LLM에 함께 보낼 최근 대화 수 (DB에는 전부 저장하며 조회 API는 전체를 반환한다)
+  history-size: ${CHAT_HISTORY_SIZE:10}
+  thread:
+    idle-minutes: ${CHAT_THREAD_IDLE_MINUTES:30}
+
 jwt:
   # 미설정 시 기동할 때 임의 키를 생성한다 (저장소에 기본 시크릿을 두지 않는다)
   secret: ${JWT_SECRET:}
