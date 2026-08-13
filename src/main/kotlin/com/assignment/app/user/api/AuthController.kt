@@ -1,5 +1,10 @@
-package com.assignment.app.auth
+package com.assignment.app.user.api
 
+import com.assignment.app.user.application.AuthService
+import com.assignment.app.user.application.LoginRequest
+import com.assignment.app.user.application.LoginResponse
+import com.assignment.app.user.application.SignupRequest
+import com.assignment.app.user.application.UserResponse
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

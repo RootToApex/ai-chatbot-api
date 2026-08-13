@@ -1,7 +1,7 @@
-package com.assignment.app.auth
+package com.assignment.app.user.application
 
-import com.assignment.app.user.Role
-import com.assignment.app.user.User
+import com.assignment.app.user.domain.Role
+import com.assignment.app.user.domain.User
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size

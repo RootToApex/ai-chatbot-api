@@ -1,4 +1,4 @@
-package com.assignment.app.auth
+package com.assignment.app.user
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Test

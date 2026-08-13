@@ -1,7 +1,7 @@
 package com.assignment.app.config
 
-import com.assignment.app.user.Role
-import com.assignment.app.user.User
+import com.assignment.app.user.domain.Role
+import com.assignment.app.user.domain.User
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts

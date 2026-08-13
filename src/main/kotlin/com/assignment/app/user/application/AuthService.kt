@@ -1,12 +1,12 @@
-package com.assignment.app.auth
+package com.assignment.app.user.application
 
 import com.assignment.app.common.ApiException
 import com.assignment.app.config.JwtTokenProvider
-import com.assignment.app.user.LoginEvent
-import com.assignment.app.user.LoginEventRepository
-import com.assignment.app.user.Role
-import com.assignment.app.user.User
-import com.assignment.app.user.UserRepository
+import com.assignment.app.user.domain.LoginEvent
+import com.assignment.app.user.domain.LoginEventRepository
+import com.assignment.app.user.domain.Role
+import com.assignment.app.user.domain.User
+import com.assignment.app.user.domain.UserRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service

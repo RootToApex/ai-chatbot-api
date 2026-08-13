@@ -1,8 +1,8 @@
 package com.assignment.app.config
 
-import com.assignment.app.user.Role
-import com.assignment.app.user.User
-import com.assignment.app.user.UserRepository
+import com.assignment.app.user.domain.Role
+import com.assignment.app.user.domain.User
+import com.assignment.app.user.domain.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments

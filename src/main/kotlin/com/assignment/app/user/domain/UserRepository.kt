@@ -1,4 +1,4 @@
-package com.assignment.app.user
+package com.assignment.app.user.domain
 
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.Instant
