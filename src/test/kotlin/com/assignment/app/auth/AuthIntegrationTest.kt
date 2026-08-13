@@ -49,6 +49,42 @@ class AuthIntegrationTest {
     }
 
     @Test
+    fun `로그인 성공 시 JWT를 발급한다`() {
+        val email = uniqueEmail()
+        signup(email).andExpect(status().isCreated)
+
+        mockMvc.perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("email" to email, "password" to "password123"))),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
+            .andExpect(jsonPath("$.tokenType").value("Bearer"))
+    }
+
+    @Test
+    fun `패스워드가 틀리면 401`() {
+        val email = uniqueEmail()
+        signup(email).andExpect(status().isCreated)
+
+        mockMvc.perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("email" to email, "password" to "wrong-password"))),
+        ).andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `없는 이메일로 로그인하면 401`() {
+        mockMvc.perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("email" to uniqueEmail(), "password" to "password123"))),
+        ).andExpect(status().isUnauthorized)
+    }
+
+    @Test
     fun `필수 필드가 없으면 400`() {
         mockMvc.perform(
             post("/api/v1/auth/signup")

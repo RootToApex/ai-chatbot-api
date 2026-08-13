@@ -12,5 +12,10 @@ spring:
   flyway:
     enabled: true
 
+jwt:
+  # 미설정 시 기동할 때 임의 키를 생성한다 (저장소에 기본 시크릿을 두지 않는다)
+  secret: ${JWT_SECRET:}
+  expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
+
 server:
   port: 8080

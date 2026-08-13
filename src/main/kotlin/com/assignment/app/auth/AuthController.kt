@@ -15,4 +15,7 @@ class AuthController(private val authService: AuthService) {
     @PostMapping("/signup")
     fun signup(@Valid @RequestBody request: SignupRequest): ResponseEntity<UserResponse> =
         ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(request))
+
+    @PostMapping("/login")
+    fun login(@Valid @RequestBody request: LoginRequest): LoginResponse = authService.login(request)
 }

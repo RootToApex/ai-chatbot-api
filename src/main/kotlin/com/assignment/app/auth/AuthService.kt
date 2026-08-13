@@ -1,6 +1,9 @@
 package com.assignment.app.auth
 
 import com.assignment.app.common.ApiException
+import com.assignment.app.config.JwtTokenProvider
+import com.assignment.app.user.LoginEvent
+import com.assignment.app.user.LoginEventRepository
 import com.assignment.app.user.Role
 import com.assignment.app.user.User
 import com.assignment.app.user.UserRepository
@@ -12,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class AuthService(
     private val userRepository: UserRepository,
+    private val loginEventRepository: LoginEventRepository,
     private val passwordEncoder: PasswordEncoder,
+    private val jwtTokenProvider: JwtTokenProvider,
 ) {
 
     /**
@@ -35,6 +40,22 @@ class AuthService(
             throw ApiException.conflict("EMAIL_ALREADY_EXISTS", "이미 사용 중인 이메일입니다")
         }
         return UserResponse.from(saved)
+    }
+
+    /**
+     * 이메일 존재 여부와 패스워드 불일치를 구분하지 않는다 — 가입 여부가 새어나가지 않게.
+     * 로그인 성공은 login_events에 남긴다(활동 기록 집계의 유일한 근거).
+     */
+    @Transactional
+    fun login(request: LoginRequest): LoginResponse {
+        val email = requireField(request.email, "email").trim().lowercase()
+        val user = userRepository.findByEmail(email)
+        val matches = user != null && passwordEncoder.matches(requireField(request.password, "password"), user.password)
+        if (user == null || !matches) {
+            throw ApiException.unauthorized("INVALID_CREDENTIALS", "이메일 또는 패스워드가 올바르지 않습니다")
+        }
+        loginEventRepository.save(LoginEvent(userId = requireNotNull(user.id)))
+        return LoginResponse(accessToken = jwtTokenProvider.issue(user))
     }
 
     private fun requireField(value: String?, field: String): String =
