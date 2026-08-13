@@ -1,0 +1,64 @@
+#!/bin/bash
+# 🔒 최후 방어선 — push 되는 커밋 "전체 범위"를 검사한다.
+#
+# pre-commit은 새 커밋만 본다. 이미 들어간 시크릿이나 --no-verify로 넘긴 것은 못 막는다.
+# push는 되돌릴 수 없으므로(원격에 남고 인덱싱될 수 있다) 여기서 한 번 더 전수 검사한다.
+#
+# 08-09 보강: ①추가 라인 0개(삭제-전용 push)가 pipefail로 오차단되던 버그 수정
+#            ②diff-filter R 포함  ③.env.* 파일명 일반화
+
+set -uo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+RED=$'\033[31m'; YEL=$'\033[33m'; GRN=$'\033[32m'; BOLD=$'\033[1m'; OFF=$'\033[0m'
+FAIL=0
+Z40="0000000000000000000000000000000000000000"
+
+echo "🔒 push 전 시크릿 전수 검사..."
+
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [ "$local_sha" = "$Z40" ] && continue                    # 브랜치 삭제 push
+  if [ "$remote_sha" = "$Z40" ]; then
+    RANGE="$local_sha"                                      # 새 브랜치 → 도달 가능한 전체 히스토리
+    SCOPE="전체 히스토리"
+  else
+    RANGE="$remote_sha..$local_sha"
+    SCOPE="$RANGE"
+  fi
+
+  # 이 범위에서 추가된 모든 라인 (훅 스크립트 자신은 제외 — 패턴 정의가 들어 있다)
+  ADDED=$(git log -p --no-color --diff-filter=ACMR "$RANGE" -- . ':(exclude).githooks/*' 2>/dev/null \
+          | grep -E '^\+' | grep -Ev '^\+\+\+' || true)
+  if [ -n "$ADDED" ]; then
+    if ! printf '%s\n' "$ADDED" | bash "$DIR/secret-scan.sh" "push($SCOPE)"; then
+      FAIL=1
+    fi
+  fi
+
+  # 이 범위에서 추가된 파일명 (.env.example/sample/template만 예외)
+  CAND=$(git log --name-only --pretty=format: --diff-filter=ACMR "$RANGE" 2>/dev/null | sort -u | grep -Ei \
+    '(^|/)\.env(\.[A-Za-z0-9._-]+)?$|\.pem$|\.p12$|\.pfx$|\.jks$|\.keystore$|(^|/)id_rsa|(^|/)id_ed25519|\.key$|(^|/)credentials(\.json)?$|(^|/)service-account.*\.json$' \
+    || true)
+  BLOCKED=$(printf '%s\n' "$CAND" | grep -Ev '(^|/)\.env\.(example|sample|template)$' | grep -v '^$' || true)
+  if [ -n "$BLOCKED" ]; then
+    echo ""
+    echo "${RED}${BOLD}🚨 push 차단 — 히스토리에 시크릿 파일이 있습니다${OFF}"
+    echo "$BLOCKED" | sed 's/^/    /'
+    FAIL=1
+  fi
+done
+
+if [ "$FAIL" -ne 0 ]; then
+  echo ""
+  echo "${RED}${BOLD}push를 중단했습니다.${OFF}"
+  echo "${YEL}이미 커밋된 시크릿은 파일만 지워도 히스토리에 남습니다.${OFF} 다음 중 하나로 처리하세요:"
+  echo "  ${BOLD}방금 커밋이면${OFF}   git reset --soft HEAD~1  → 값을 빼고 다시 커밋"
+  echo "  ${BOLD}과거 커밋이면${OFF}   git filter-repo --replace-text  (또는 새 레포에 스쿼시 후 push)"
+  echo "  ${BOLD}그리고 반드시${OFF}   노출된 키는 발급처에서 폐기·재발급"
+  echo ""
+  echo "제출 마감이 급해도 ${BOLD}--no-verify로 넘기지 마세요.${OFF} public 레포면 그 순간 공개됩니다."
+  echo ""
+  exit 1
+fi
+
+echo "${GRN}✅ 시크릿 없음 — push 진행${OFF}"
+exit 0
