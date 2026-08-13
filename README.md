@@ -5,12 +5,50 @@ Kotlin + Spring Boot 기반 챗봇 API 서버. 회원 인증(JWT), OpenAI 연동
 ## 실행 방법
 
 ```bash
-docker compose up -d --wait   # PostgreSQL 15.8
-./gradlew bootRun             # 애플리케이션 실행
-./gradlew test                # 테스트 (OpenAI 키 불필요 — 결정론적 fake 사용)
+docker compose up -d --wait                        # PostgreSQL 15.8
+OPENAI_API_KEY=<발급받은 키> ./gradlew bootRun      # 실제 OpenAI 호출
+./gradlew test                                     # 테스트 (키 불필요)
 ```
 
-- OpenAI 실 호출에는 `OPENAI_API_KEY` 환경변수가 필요합니다 (`.env.example` 참고). 키가 없으면 대화 생성 API는 명시적 503을 반환합니다 — 그 외 전 기능은 키 없이 동작합니다.
+**키 없이 흐름만 확인하려면** 가짜 응답 모드를 명시적으로 켭니다. 스레드 묶임·이력 전달·스트리밍·목록 그룹화까지 동일하게 동작하며, 답변 내용만 고정된 문자열입니다.
+
+```bash
+AI_PROVIDER=fake ./gradlew bootRun
+```
+
+- 키를 지정하지 않고 기본 모드로 실행하면 대화 생성 API는 조용히 흉내내지 않고 **503**으로 실패합니다. 실제 호출이 기본 경로이기 때문입니다.
+- 환경변수는 `.env.example`에 정리돼 있습니다. Spring Boot는 `.env` 파일을 자동으로 읽지 않으므로 셸에 주입해야 합니다: `set -a && . ./.env && set +a && ./gradlew bootRun`
+- **관리자 계정**은 기동 시 시드로 생성됩니다. `ADMIN_PASSWORD`를 지정하지 않으면 `admin@example.com` / `admin1234`로 만들어지며 경고 로그가 남습니다. 로컬 확인 외의 환경에서는 반드시 `ADMIN_PASSWORD`를 지정하십시오. 회원가입 API로는 관리자를 만들 수 없습니다.
+
+### 동작 확인 예시
+
+```bash
+# 1) 가입 → 로그인 → 토큰 확보
+curl -s -X POST localhost:8080/api/v1/auth/signup -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"password123","name":"데모"}'
+
+TOKEN=$(curl -s -X POST localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"password123"}' | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+
+# 2) 대화 생성 — 30분 이내 재질문은 같은 스레드로 묶이고 이력이 함께 전달됩니다
+curl -s -X POST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"question":"내 이름은 홍길동이야. 인사해줘."}'
+curl -s -X POST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"question":"내 이름이 뭐였지?"}'
+
+# 3) 스트리밍 응답
+curl -sN -X POST localhost:8080/api/v1/chats -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"question":"1부터 5까지 세어줘","isStreaming":true}'
+
+# 4) 스레드 단위로 그룹화된 대화 목록
+curl -s "localhost:8080/api/v1/chats?page=0&size=20&sort=desc" -H "Authorization: Bearer $TOKEN"
+
+# 5) 관리자 기능 — 활동 집계와 보고서
+ADMIN=$(curl -s -X POST localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"admin1234"}' | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+curl -s localhost:8080/api/v1/admin/activity -H "Authorization: Bearer $ADMIN"
+curl -s localhost:8080/api/v1/admin/report -H "Authorization: Bearer $ADMIN" -o report.csv
+```
 
 ## 요구사항 분석
 
