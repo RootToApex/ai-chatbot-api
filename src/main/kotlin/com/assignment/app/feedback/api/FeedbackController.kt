@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/feedbacks")
@@ -42,7 +43,7 @@ class FeedbackController(private val feedbackService: FeedbackService) {
     @PatchMapping("/{id}/status")
     fun updateStatus(
         @AuthenticationPrincipal user: AuthenticatedUser,
-        @PathVariable id: Long,
+        @PathVariable id: UUID,
         @Valid @RequestBody request: FeedbackStatusUpdateRequest,
     ): FeedbackResponse = feedbackService.updateStatus(user, id, request)
 }

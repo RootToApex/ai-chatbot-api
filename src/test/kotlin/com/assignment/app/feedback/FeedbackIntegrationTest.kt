@@ -49,7 +49,7 @@ class FeedbackIntegrationTest {
     }
 
     /** 회원가입 + 로그인으로 일반 회원 (userId, token)을 만든다. */
-    private fun signupMember(): Pair<Long, String> {
+    private fun signupMember(): Pair<UUID, String> {
         val email = uniqueEmail()
         mockMvc.perform(
             post("/api/v1/auth/signup").contentType(MediaType.APPLICATION_JSON).content(
@@ -81,7 +81,7 @@ class FeedbackIntegrationTest {
         return jwtTokenProvider.issue(saved)
     }
 
-    private fun createChat(ownerUserId: Long): Chat {
+    private fun createChat(ownerUserId: UUID): Chat {
         val thread = chatThreadRepository.save(
             ChatThread(userId = ownerUserId, createdAt = Instant.now(), lastQuestionAt = Instant.now()),
         )
@@ -91,7 +91,7 @@ class FeedbackIntegrationTest {
         )
     }
 
-    private fun createFeedback(token: String, chatId: Long, isPositive: Boolean = true) =
+    private fun createFeedback(token: String, chatId: UUID, isPositive: Boolean = true) =
         mockMvc.perform(
             post("/api/v1/feedbacks")
                 .header("Authorization", "Bearer $token")
@@ -125,7 +125,7 @@ class FeedbackIntegrationTest {
         val chatId = requireNotNull(chat.id)
 
         val createBody = createFeedback(token, chatId).andExpect(status().isCreated).andReturn().response.contentAsString
-        val feedbackId = objectMapper.readTree(createBody)["id"].asLong()
+        val feedbackId = UUID.fromString(objectMapper.readTree(createBody)["id"].asText())
 
         mockMvc.perform(
             patch("/api/v1/feedbacks/$feedbackId/status")
@@ -143,7 +143,7 @@ class FeedbackIntegrationTest {
         val admin = adminToken()
 
         val createBody = createFeedback(token, chatId).andExpect(status().isCreated).andReturn().response.contentAsString
-        val feedbackId = objectMapper.readTree(createBody)["id"].asLong()
+        val feedbackId = UUID.fromString(objectMapper.readTree(createBody)["id"].asText())
 
         mockMvc.perform(
             patch("/api/v1/feedbacks/$feedbackId/status")
@@ -152,10 +152,10 @@ class FeedbackIntegrationTest {
                 .content(objectMapper.writeValueAsString(mapOf("status" to "resolved"))),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.status").value("RESOLVED"))
+            .andExpect(jsonPath("$.status").value("resolved"))
 
         mockMvc.perform(
-            patch("/api/v1/feedbacks/999999999/status")
+            patch("/api/v1/feedbacks/${UUID.randomUUID()}/status")
                 .header("Authorization", "Bearer $admin")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("status" to "RESOLVED"))),
@@ -174,7 +174,7 @@ class FeedbackIntegrationTest {
         ).andExpect(status().isOk).andReturn().response.contentAsString
 
         val content = objectMapper.readTree(body)["content"]
-        assertTrue(content.all { it["userId"].asLong() == userAId })
+        assertTrue(content.all { it["userId"].asText() == userAId.toString() })
     }
 
     @Test

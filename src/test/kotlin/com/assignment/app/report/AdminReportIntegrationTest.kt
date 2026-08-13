@@ -84,11 +84,11 @@ class AdminReportIntegrationTest {
         )
     }
 
-    private fun saveLoginEvent(userId: Long, createdAt: Instant) {
+    private fun saveLoginEvent(userId: UUID, createdAt: Instant) {
         loginEventRepository.save(LoginEvent(userId = userId, createdAt = createdAt))
     }
 
-    private fun saveChat(userId: Long, question: String, createdAt: Instant): Chat {
+    private fun saveChat(userId: UUID, question: String, createdAt: Instant): Chat {
         val thread = chatThreadRepository.save(ChatThread(userId = userId, createdAt = createdAt, lastQuestionAt = createdAt))
         val threadId = requireNotNull(thread.id) { "저장되지 않은 스레드입니다" }
         return chatRepository.save(Chat(threadId = threadId, question = question, answer = "답", model = "gpt-4o-mini", createdAt = createdAt))

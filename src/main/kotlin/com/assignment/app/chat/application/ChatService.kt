@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 
 @Service
 class ChatService(
@@ -37,7 +38,7 @@ class ChatService(
      * 수십 초짜리 외부 호출이 커넥션을 잡고 있으면 동시 요청 몇 개로 풀이 마른다.
      * 순서: 이력 조회(짧은 tx) → AI 호출(tx 밖) → 스레드 확정·대화 저장(짧은 tx)
      */
-    fun create(userId: Long, request: ChatCreateRequest): ChatResponse {
+    fun create(userId: UUID, request: ChatCreateRequest): ChatResponse {
         val question = requireQuestion(request)
         val now = Instant.now()
         val history = loadHistory(userId, now)
@@ -49,7 +50,7 @@ class ChatService(
      * 스트리밍 생성. 토큰은 [onToken]으로 흘리고, 스트림이 끝난 뒤에야 저장한다.
      * 중간에 실패하면 저장하지 않는다(비스트리밍과 동일한 정책).
      */
-    fun createStreaming(userId: Long, request: ChatCreateRequest, onToken: (String) -> Unit): ChatResponse {
+    fun createStreaming(userId: UUID, request: ChatCreateRequest, onToken: (String) -> Unit): ChatResponse {
         val question = requireQuestion(request)
         val now = Instant.now()
         val history = loadHistory(userId, now)
@@ -90,7 +91,7 @@ class ChatService(
 
     /** 스레드 삭제 — 본인 것만. 하위 대화·피드백은 FK CASCADE로 함께 삭제된다. */
     @Transactional
-    fun deleteThread(user: AuthenticatedUser, threadId: Long) {
+    fun deleteThread(user: AuthenticatedUser, threadId: UUID) {
         val thread = threadRepository.findById(threadId).orElseThrow {
             ApiException.notFound("THREAD_NOT_FOUND", "스레드를 찾을 수 없습니다")
         }
@@ -105,7 +106,7 @@ class ChatService(
      * 전체 전송은 토큰·지연이 대화 길이에 비례해 늘다가 컨텍스트 한도에서 실패한다.
      * DB에는 전부 저장되며 조회 API는 전체를 돌려준다.
      */
-    private fun loadHistory(userId: Long, now: Instant): List<AiMessage> {
+    private fun loadHistory(userId: UUID, now: Instant): List<AiMessage> {
         val thread = threadResolver.findActiveThread(userId, now) ?: return emptyList()
         val threadId = thread.id ?: return emptyList()
         val recent = chatRepository.findByThreadIdOrderByCreatedAtDescIdDesc(threadId, PageRequest.of(0, historySize))
@@ -123,7 +124,7 @@ class ChatService(
         throw unavailable(e)
     }
 
-    private fun persist(userId: Long, question: String, result: AiChatResult): Chat {
+    private fun persist(userId: UUID, question: String, result: AiChatResult): Chat {
         val committedAt = Instant.now()
         val thread = threadResolver.commitQuestion(userId, committedAt)
         val threadId = requireNotNull(thread.id) { "스레드 저장에 실패했습니다" }

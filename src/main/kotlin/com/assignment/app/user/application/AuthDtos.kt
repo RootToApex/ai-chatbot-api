@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import java.time.Instant
+import java.util.UUID
 
 /** 요청 DTO는 전 필드 nullable — non-null로 받으면 필드 누락 시 400이 아니라 500이 된다. */
 data class SignupRequest(
@@ -31,7 +32,7 @@ data class LoginRequest(
 )
 
 data class UserResponse(
-    val id: Long,
+    val id: UUID,
     val email: String,
     val name: String,
     val role: Role,

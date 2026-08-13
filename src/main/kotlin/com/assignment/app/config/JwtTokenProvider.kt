@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.Date
+import java.util.UUID
 import javax.crypto.SecretKey
 
 /**
@@ -48,7 +49,7 @@ class JwtTokenProvider(
     fun parse(token: String): AuthenticatedUser? = try {
         val claims: Claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).payload
         AuthenticatedUser(
-            id = claims.subject.toLong(),
+            id = UUID.fromString(claims.subject),
             email = claims["email"] as String,
             role = Role.valueOf(claims["role"] as String),
         )
@@ -59,4 +60,4 @@ class JwtTokenProvider(
     }
 }
 
-data class AuthenticatedUser(val id: Long, val email: String, val role: Role)
+data class AuthenticatedUser(val id: UUID, val email: String, val role: Role)

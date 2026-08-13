@@ -4,11 +4,12 @@ import com.assignment.app.feedback.domain.Feedback
 import com.assignment.app.feedback.domain.FeedbackStatus
 import jakarta.validation.constraints.NotNull
 import java.time.Instant
+import java.util.UUID
 
 /** 요청 DTO는 전 필드 nullable — non-null로 받으면 필드 누락 시 400이 아니라 500이 된다. */
 data class FeedbackCreateRequest(
     @field:NotNull(message = "chatId는 필수입니다")
-    val chatId: Long? = null,
+    val chatId: UUID? = null,
 
     @field:NotNull(message = "isPositive는 필수입니다")
     val isPositive: Boolean? = null,
@@ -20,9 +21,9 @@ data class FeedbackStatusUpdateRequest(
 )
 
 data class FeedbackResponse(
-    val id: Long,
-    val chatId: Long,
-    val userId: Long,
+    val id: UUID,
+    val chatId: UUID,
+    val userId: UUID,
     val isPositive: Boolean,
     val status: FeedbackStatus,
     val createdAt: Instant,

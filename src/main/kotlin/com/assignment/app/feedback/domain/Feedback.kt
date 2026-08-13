@@ -1,5 +1,6 @@
 package com.assignment.app.feedback.domain
 
+import com.fasterxml.jackson.annotation.JsonValue
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -9,8 +10,14 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.Instant
+import java.util.UUID
 
-enum class FeedbackStatus { PENDING, RESOLVED }
+enum class FeedbackStatus {
+    PENDING, RESOLVED;
+
+    @JsonValue
+    fun toJson(): String = name.lowercase()
+}
 
 /**
  * 대화 하나에 대한 사용자 피드백. (user_id, chat_id) 유니크 — 한 사용자는 한 대화에 하나만 남긴다.
@@ -20,10 +27,10 @@ enum class FeedbackStatus { PENDING, RESOLVED }
 @Table(name = "feedbacks")
 class Feedback(
     @Column(name = "user_id", nullable = false)
-    var userId: Long = 0,
+    var userId: UUID = UUID(0L, 0L),
 
     @Column(name = "chat_id", nullable = false)
-    var chatId: Long = 0,
+    var chatId: UUID = UUID(0L, 0L),
 
     @Column(name = "is_positive", nullable = false)
     var isPositive: Boolean = false,
@@ -36,6 +43,6 @@ class Feedback(
     var createdAt: Instant = Instant.now(),
 ) {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null
+    @GeneratedValue(strategy = GenerationType.UUID)
+    var id: UUID? = null
 }

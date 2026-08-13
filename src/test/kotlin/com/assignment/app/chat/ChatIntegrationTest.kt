@@ -52,7 +52,7 @@ class ChatIntegrationTest {
         return objectMapper.readTree(body)["accessToken"].asText()
     }
 
-    private fun ask(token: String, question: String, model: String? = null): Long {
+    private fun ask(token: String, question: String, model: String? = null): UUID {
         val payload = buildMap {
             put("question", question)
             if (model != null) put("model", model)
@@ -62,7 +62,7 @@ class ChatIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(payload)),
         ).andExpect(status().isCreated).andReturn().response.contentAsString
-        return objectMapper.readTree(body)["threadId"].asLong()
+        return UUID.fromString(objectMapper.readTree(body)["threadId"].asText())
     }
 
     @Test
@@ -75,8 +75,8 @@ class ChatIntegrationTest {
                 .content("""{"question":"안녕하세요"}"""),
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.id").isNumber)
-            .andExpect(jsonPath("$.threadId").isNumber)
+            .andExpect(jsonPath("$.id").isString)
+            .andExpect(jsonPath("$.threadId").isString)
             .andExpect(jsonPath("$.question").value("안녕하세요"))
             .andExpect(jsonPath("$.answer").isNotEmpty)
     }
@@ -157,7 +157,7 @@ class ChatIntegrationTest {
 
         mockMvc.perform(get("/api/v1/chats").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.content[0].threadId").isNumber)
+            .andExpect(jsonPath("$.content[0].threadId").isString)
             .andExpect(jsonPath("$.content[0].chats[0].question").value("내 질문"))
             .andExpect(jsonPath("$.totalElements").value(1))
     }
@@ -192,7 +192,7 @@ class ChatIntegrationTest {
     @Test
     fun `없는 스레드를 삭제하면 404`() {
         val token = newUserToken()
-        val missingId = (threadRepository.findAll().mapNotNull { it.id }.maxOrNull() ?: 0L) + 1_000L
+        val missingId = UUID.randomUUID()
 
         mockMvc.perform(delete("/api/v1/threads/$missingId").header("Authorization", "Bearer $token"))
             .andExpect(status().isNotFound)

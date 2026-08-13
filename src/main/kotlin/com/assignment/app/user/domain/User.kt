@@ -1,5 +1,6 @@
 package com.assignment.app.user.domain
 
+import com.fasterxml.jackson.annotation.JsonValue
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -9,8 +10,20 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.Instant
+import java.util.UUID
 
-enum class Role { MEMBER, ADMIN }
+/**
+ * 역할. 코드 안에서는 관례대로 대문자를 쓰고, 외부 계약(JSON)에는 소문자로 노출한다.
+ * DB에는 @Enumerated(STRING)으로 대문자가 저장된다.
+ */
+enum class Role {
+    MEMBER,
+    ADMIN,
+    ;
+
+    @JsonValue
+    fun toJson(): String = name.lowercase()
+}
 
 @Entity
 @Table(name = "users")
@@ -32,6 +45,6 @@ class User(
     var createdAt: Instant = Instant.now(),
 ) {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null
+    @GeneratedValue(strategy = GenerationType.UUID)
+    var id: UUID? = null
 }

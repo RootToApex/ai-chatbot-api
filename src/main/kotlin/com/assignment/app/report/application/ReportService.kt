@@ -51,14 +51,15 @@ class ReportService(
         val userIds = threadsById.values.map { it.userId }.distinct()
         val usersById = userRepository.findAllById(userIds).associateBy { it.id }
 
-        val rows = chats.map { chat ->
+        // thread를 찾지 못한 대화(고아 행)는 userId에 UUID 기본값이 없으므로 보고서에서 건너뛴다.
+        val rows = chats.mapNotNull { chat ->
             val chatId = requireNotNull(chat.id) { "저장되지 않은 대화입니다" }
-            val thread = threadsById[chat.threadId]
-            val user = thread?.let { usersById[it.userId] }
+            val thread = threadsById[chat.threadId] ?: return@mapNotNull null
+            val user = usersById[thread.userId]
             ChatReportRow(
                 chatId = chatId,
                 threadId = chat.threadId,
-                userId = thread?.userId ?: 0L,
+                userId = thread.userId,
                 userEmail = user?.email ?: "",
                 userName = user?.name ?: "",
                 question = chat.question,

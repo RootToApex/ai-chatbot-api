@@ -5,6 +5,7 @@ import com.assignment.app.chat.domain.ChatThread
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import java.time.Instant
+import java.util.UUID
 
 data class ChatCreateRequest(
     @field:NotBlank(message = "질문은 필수입니다")
@@ -19,8 +20,8 @@ data class ChatCreateRequest(
 )
 
 data class ChatResponse(
-    val id: Long,
-    val threadId: Long,
+    val id: UUID,
+    val threadId: UUID,
     val question: String,
     val answer: String,
     val model: String?,
@@ -40,8 +41,8 @@ data class ChatResponse(
 
 /** 대화 목록은 스레드 단위로 그룹화해 응답한다. */
 data class ThreadGroupResponse(
-    val threadId: Long,
-    val userId: Long,
+    val threadId: UUID,
+    val userId: UUID,
     val createdAt: Instant,
     val lastQuestionAt: Instant,
     val chats: List<ChatResponse>,

@@ -34,9 +34,9 @@ class AuthIntegrationTest {
 
         signup(email)
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.id").isNumber)
+            .andExpect(jsonPath("$.id").isString)
             .andExpect(jsonPath("$.email").value(email))
-            .andExpect(jsonPath("$.role").value("MEMBER"))
+            .andExpect(jsonPath("$.role").value("member"))
             .andExpect(jsonPath("$.password").doesNotExist())
     }
 

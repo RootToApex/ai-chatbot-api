@@ -117,9 +117,11 @@ curl -s localhost:8080/api/v1/admin/report -H "Authorization: Bearer $ADMIN" -o 
 
 ### 데이터 모델
 
+모든 식별자는 `UUID`입니다.
+
 - **users** — id PK, email unique, password(해시), name, role(member|admin), created_at
 - **threads** — id PK, user_id FK, created_at, last_question_at(30분 경계 판단)
-- **chats** — id PK, thread_id FK, question, answer, created_at
+- **chats** — id PK, thread_id FK, question, answer, model, created_at
 - **feedbacks** — id PK, user_id FK, chat_id FK, unique(user_id, chat_id), is_positive, status, created_at
 - **login_events** — id PK, user_id FK, created_at (활동 기록의 로그인 수 집계용)
 
@@ -138,6 +140,8 @@ curl -s localhost:8080/api/v1/admin/report -H "Authorization: Bearer $ADMIN" -o 
 | 7 | 대화 목록 페이지네이션 | 스레드 단위 페이징(0-base, 생성일시+id 정렬), 스레드 내부 대화는 오름차순 고정, size 상한 100 |
 | 8 | "하루 동안" | 요청 시점부터 rolling 24시간(UTC). 로그인 수는 login_events 테이블로 집계 |
 | 9 | 스레드 삭제 | 하위 chats·feedbacks까지 물리 삭제(CASCADE). soft delete는 요구에 없어 배제 |
+| 10 | 식별자 타입 | 전 엔티티 UUID. 요구사항이 피드백의 ID를 문자열로 표기한 점을 반영하되, 특정 엔티티만 다르게 두지 않고 전체를 통일 |
+| 11 | enum 표기 | 코드 안에서는 대문자(`Role.MEMBER`), 외부 계약(JSON)에는 소문자(`member`, `pending`)로 노출. 입력은 대소문자를 모두 받음 |
 
 ## 구현 범위
 

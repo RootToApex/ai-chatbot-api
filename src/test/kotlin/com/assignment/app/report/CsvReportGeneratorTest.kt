@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
 import java.time.Instant
+import java.util.UUID
 
 /** 순수 단위 테스트 — Spring 컨텍스트 없이 CsvReportGenerator만 검증한다. */
 class CsvReportGeneratorTest {
@@ -14,9 +15,9 @@ class CsvReportGeneratorTest {
     private val generator = CsvReportGenerator()
 
     private fun row(question: String, answer: String = "답") = ChatReportRow(
-        chatId = 1L,
-        threadId = 1L,
-        userId = 1L,
+        chatId = UUID.randomUUID(),
+        threadId = UUID.randomUUID(),
+        userId = UUID.randomUUID(),
         userEmail = "user@example.com",
         userName = "테스터",
         question = question,

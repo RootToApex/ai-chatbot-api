@@ -1,5 +1,6 @@
+-- 식별자는 UUID로 둔다. 순번이 노출되지 않고, 분산 환경에서 미리 생성할 수 있다.
 CREATE TABLE users (
-    id         BIGSERIAL PRIMARY KEY,
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email      VARCHAR(255) NOT NULL UNIQUE,
     password   VARCHAR(255) NOT NULL,
     name       VARCHAR(100) NOT NULL,
@@ -10,8 +11,8 @@ CREATE TABLE users (
 CREATE INDEX idx_users_created_at ON users (created_at);
 
 CREATE TABLE threads (
-    id               BIGSERIAL PRIMARY KEY,
-    user_id          BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id          UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_question_at TIMESTAMPTZ NOT NULL
 );
@@ -22,8 +23,8 @@ CREATE INDEX idx_threads_user_last_question ON threads (user_id, last_question_a
 CREATE INDEX idx_threads_user_created ON threads (user_id, created_at, id);
 
 CREATE TABLE chats (
-    id         BIGSERIAL PRIMARY KEY,
-    thread_id  BIGINT      NOT NULL REFERENCES threads (id) ON DELETE CASCADE,
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    thread_id  UUID        NOT NULL REFERENCES threads (id) ON DELETE CASCADE,
     question   TEXT        NOT NULL,
     answer     TEXT        NOT NULL,
     model      VARCHAR(100),
@@ -35,9 +36,9 @@ CREATE INDEX idx_chats_thread_created ON chats (thread_id, created_at, id);
 CREATE INDEX idx_chats_created_at ON chats (created_at);
 
 CREATE TABLE feedbacks (
-    id          BIGSERIAL PRIMARY KEY,
-    user_id     BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    chat_id     BIGINT      NOT NULL REFERENCES chats (id) ON DELETE CASCADE,
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    chat_id     UUID        NOT NULL REFERENCES chats (id) ON DELETE CASCADE,
     is_positive BOOLEAN     NOT NULL,
     status      VARCHAR(20) NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -47,8 +48,8 @@ CREATE TABLE feedbacks (
 CREATE INDEX idx_feedbacks_user_created ON feedbacks (user_id, created_at, id);
 
 CREATE TABLE login_events (
-    id         BIGSERIAL PRIMARY KEY,
-    user_id    BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

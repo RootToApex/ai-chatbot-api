@@ -55,7 +55,7 @@ if [ "$FAIL" -ne 0 ]; then
   echo "  ${BOLD}과거 커밋이면${OFF}   git filter-repo --replace-text  (또는 새 레포에 스쿼시 후 push)"
   echo "  ${BOLD}그리고 반드시${OFF}   노출된 키는 발급처에서 폐기·재발급"
   echo ""
-  echo "제출 마감이 급해도 ${BOLD}--no-verify로 넘기지 마세요.${OFF} public 레포면 그 순간 공개됩니다."
+  echo "급해도 ${BOLD}--no-verify로 넘기지 마세요.${OFF} public 레포면 그 순간 공개됩니다."
   echo ""
   exit 1
 fi

@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 class FeedbackService(
@@ -86,7 +87,7 @@ class FeedbackService(
     }
 
     @Transactional
-    fun updateStatus(user: AuthenticatedUser, id: Long, request: FeedbackStatusUpdateRequest): FeedbackResponse {
+    fun updateStatus(user: AuthenticatedUser, id: UUID, request: FeedbackStatusUpdateRequest): FeedbackResponse {
         if (user.role != Role.ADMIN) {
             throw ApiException.forbidden("FEEDBACK_STATUS_FORBIDDEN", "관리자만 상태를 변경할 수 있습니다")
         }

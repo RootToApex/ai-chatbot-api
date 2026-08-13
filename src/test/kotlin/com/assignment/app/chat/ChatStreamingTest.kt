@@ -58,7 +58,7 @@ class ChatStreamingTest {
         assertTrue(payload.contains("event:done"), "완료 이벤트가 있어야 한다")
 
         val threadId = objectMapper.readTree(payload.substringAfter("event:done").substringAfter("data:").substringBefore("\n"))
-        val stored = chatRepository.findByThreadIdInOrderByCreatedAtAscIdAsc(listOf(threadId["threadId"].asLong()))
+        val stored = chatRepository.findByThreadIdInOrderByCreatedAtAscIdAsc(listOf(UUID.fromString(threadId["threadId"].asText())))
         assertEquals(1, stored.size, "스트림이 끝난 뒤 대화가 저장돼야 한다")
         assertTrue(stored.first().answer.isNotBlank(), "누적된 답변이 저장돼야 한다")
     }
