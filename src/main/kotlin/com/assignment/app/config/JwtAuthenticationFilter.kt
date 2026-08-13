@@ -34,6 +34,13 @@ class JwtAuthenticationFilter(private val jwtTokenProvider: JwtTokenProvider) : 
         filterChain.doFilter(request, response)
     }
 
+    /**
+     * 비동기 디스패치(SSE)에서도 필터를 태운다.
+     * 기본값(true)이면 스트리밍 응답이 끝나고 디스패치가 필터 체인에 재진입할 때 인증이 비어 있어
+     * 인가 필터가 401을 쓰려 하고, 이미 커밋된 응답이라 ServletException으로 터진다.
+     */
+    override fun shouldNotFilterAsyncDispatch(): Boolean = false
+
     companion object {
         private const val BEARER_PREFIX = "Bearer "
     }
